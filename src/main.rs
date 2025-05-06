@@ -20,9 +20,6 @@ impl Cell{
     // fn coordinates(&self) -> (f32, f32){
         // (self.x, self.y)
     // }
-    fn change_state(&mut self){
-        !self.alive;
-    } 
 }
 
 struct Grid{
@@ -88,7 +85,7 @@ fn change(&mut self,x: f32, y:f32){
            
     }
     fn count_neighbour(&mut self, x:f32, y:f32,alive:bool) -> bool{
-        let count = &self.get_neighbour_coordinates(x, y).iter().filter(|&&alive| alive).count();
+        let count = self.get_neighbour_coordinates(x, y).iter().filter(|&&alive| alive).count();
          
         match (alive,count){
             (true, 2) | (true, 3) => true,
@@ -136,17 +133,12 @@ fn change(&mut self,x: f32, y:f32){
         let len = self.cells.len();
         let mut should_change: Vec<(f32,f32)> = vec![];
         for i in 0..len{
-            let (x,y,_nextstate , alive) = {
+            let (x,y, alive) = {
                 let cell = &self.cells[i];
-                (cell.x, cell.y ,cell.next_state, cell.alive)
+                (cell.x, cell.y , cell.alive)
             };
             let set_next_state = self.count_neighbour(x,y,alive);
             //change the next state
-            if set_next_state != alive{
-                self.change_nstate(x, y);
-            }
-           
-
             if alive != set_next_state{
                 should_change.push((x,y));
                 dbg!(should_change.len());
@@ -158,18 +150,7 @@ fn change(&mut self,x: f32, y:f32){
                 self.generation += 1;
         }
         // self.draw();
-    }
-
-    
-    
-    fn change_nstate(&mut self, x:f32, y:f32){
-            if let Some(cell) = self.get_cell_by_coordinates(x, y){
-                cell.change_state();
-            }
-            else{
-                dbg!("CANNOT CHANGE STATE!");
-            }
-    }
+    }    
 }
 
 fn new_grid() -> Grid{
@@ -184,6 +165,7 @@ async fn main() {
     loop{ 
         if screen_width() != size.0 && screen_height() != size.1{
              dbg!("window size changed.....redrawing!");
+             running = false;
              grid = new_grid();
              size = screen_size();
         }
