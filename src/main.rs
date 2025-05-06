@@ -1,9 +1,8 @@
 use std::{thread::sleep, time::Duration};
 
-use macroquad::{miniquad::window::screen_size, prelude::*, ui::widgets::Window, window};
-use rand::RandomRange;
+use macroquad::{miniquad::window::screen_size, prelude::*};
 
-const CELL_SIZE : f32 = 60.0;
+const CELL_SIZE : f32 = 15.0;
 struct Cell{
     alive: bool,
     x: f32,
@@ -12,41 +11,28 @@ struct Cell{
         
 }
 impl Cell{
-
-    fn new(x: f32, y:f32) -> Self{
-        Cell{
-           alive: false,
-           x: x,
-           y: y,
-           next_state: false
-        }
-    }
-    fn is_alive(&self) -> bool{
-        self.alive
-    }
     fn kill(&mut self){
         self.alive = false;
     } 
     fn revive(&mut self){
         self.alive = true;
     }
-    fn coordinates(&self) -> (f32, f32){
-        (self.x, self.y)
-    }
+    // fn coordinates(&self) -> (f32, f32){
+        // (self.x, self.y)
+    // }
     fn change_state(&mut self){
-        self.alive != self.alive;
+        !self.alive;
     } 
 }
 
 struct Grid{
-    cells: Vec<Cell>
-    
+    cells: Vec<Cell>,
+    generation : i32
 }
 impl Grid{
      fn new() -> Self{
         let mut grid : Vec<Cell> = vec![];    
         let mut x : f32= 0.0;
-        let mut cell = Cell{alive: false, x:0.0,y:0.0, next_state: false};
         while x < screen_width(){ 
         let mut y : f32 = 0.0;
             while y < screen_height(){
@@ -63,7 +49,7 @@ impl Grid{
 
         }
         
-        Grid { cells: grid }
+        Grid { cells: grid, generation : 0 }
      }
      //new mesaures screen size and creates a new grid, 
      //draw draws rectangles 
@@ -72,23 +58,15 @@ impl Grid{
         for cell in &self.cells{
             match cell.alive{ 
             true => {
-                // draw_rectangle_lines(cell.x, cell.y, CELL_SIZE, CELL_SIZE, 1.0, GRAY);
                 draw_rectangle(cell.x, cell.y, CELL_SIZE - 0.5, CELL_SIZE -0.5, LIGHTGRAY);
             },
             false => {
 
-            //    draw_rectangle(cell.x, cell.y, CELL_SIZE, CELL_SIZE, BLACK);
                 draw_rectangle_lines(cell.x, cell.y, CELL_SIZE, CELL_SIZE, 1.0, GRAY);
             }
         }
     }}
     
-    fn get_size(&self) -> i32{
-        self.cells.len().try_into().unwrap()
-    }
-    fn get_cell_index(&mut self, index: usize) -> Option<&mut Cell>{
-        Some(&mut self.cells[index])
-    }
     fn get_cell_by_coordinates(&mut self, x:f32, y:f32) -> Option<&mut Cell >{
          return  self.cells.iter_mut().find(
                 |cell| x >= cell.x && x < cell.x + CELL_SIZE &&
@@ -97,18 +75,8 @@ impl Grid{
 
             
     }
-        
 
-    fn random_live(&mut self){
-           let index = RandomRange::gen_range(0, self.get_size()); 
-           let alive : bool = index / 2 == 0;
-           if let Some(cell) = self.get_cell_index(index.try_into().unwrap()){ 
-           cell.kill();
-           }
-
-           
-    }
-    fn change(&mut self,x: f32, y:f32){
+fn change(&mut self,x: f32, y:f32){
            if let Some(cell) = self.get_cell_by_coordinates(x,y){ 
             if cell.alive == false{
                cell.revive();
@@ -121,21 +89,7 @@ impl Grid{
            }
            
     }
-    //where we at  right now is im tyring to figure out a way to count neighbours
-    //at the moment im just seeing how this function could work by iterating over the grid and then
-    //looping over all living cells, then killing their neighbouring cells
     fn count_neighbour(&mut self, x:f32, y:f32,alive:bool) -> bool{
-        //~~given all cells in the grid 
-        //loop over all of them
-        //for every cell -> pass it to get_neighbour_coordinates it will return the coordinates of
-        //the current cell neighbours 
-        //then loop over the cells in the returned coordinates 
-        //change cell change() state based on living neighbour count~~
-        //______________________________
-        //change of thought,this function will determine if next state for a cell is living or dead 
-        //*******************************************************
-        //UPDATE: THIS METHOD WENT THROUGH ALOT OF CHANGES :)
-        let mut nextstate : bool = false;
         let count = &self.get_neighbour_coordinates(x, y).iter().filter(|&&alive| alive).count();
          
         match (alive,count){
@@ -143,11 +97,7 @@ impl Grid{
             (false, 3) => true,
             _ => false
         }
-       //for these coordinates  
-    // -> cell -> is dead? yes -> 
 } 
-    //this method checks if neighbours exist in each of the 8 directions on the grid then returns
-    //their "alive" state
     fn get_neighbour_coordinates(&mut self, x: f32, y:f32) -> Vec<bool>{
         let mut neighbour_cells : Vec<bool> = vec![];
         //neighbour to the right
@@ -188,7 +138,7 @@ impl Grid{
         let len = self.cells.len();
         let mut should_change: Vec<(f32,f32)> = vec![];
         for i in 0..len{
-            let (x,y,nextstate , alive) = {
+            let (x,y,_nextstate , alive) = {
                 let cell = &self.cells[i];
                 (cell.x, cell.y ,cell.next_state, cell.alive)
             };
@@ -205,8 +155,10 @@ impl Grid{
             }
         
         }
-         should_change.iter().enumerate().for_each(|(i, tup)| {let (x,y) =  *tup; self.change(x, y); dbg!(x,y);} );
-
+         should_change.iter().enumerate().for_each(|(_i, tup)| {let (x,y) =  *tup; self.change(x, y); dbg!(x,y);} );
+        if self.cells.iter().any(|cell| cell.alive){
+                self.generation += 1;
+        }
         // self.draw();
     }
 
@@ -219,9 +171,6 @@ impl Grid{
             else{
                 dbg!("CANNOT CHANGE STATE!");
             }
-    }
-    fn grid_size(&self) -> usize{
-        return self.cells.len();
     }
 }
 
@@ -241,7 +190,9 @@ async fn main() {
              grid = new_grid();
              size = screen_size();
         }
-        clear_background(DARKBROWN);
+        clear_background(BLANK);
+        let text = format!("Generation: {}", grid.generation);
+        draw_text(&text, 30.0, 30.0, 30.0, RED);
         grid.draw();
         if is_key_pressed(KeyCode::Space){
              running = !running;
