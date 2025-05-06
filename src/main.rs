@@ -84,8 +84,6 @@ fn change(&mut self,x: f32, y:f32){
             }else {
                 cell.kill();
             }
-           }else {
-               ()
            }
            
     }
