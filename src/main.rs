@@ -203,6 +203,8 @@ async fn main() {
         if running {  
             grid.update_grid();
             sleep(Duration::from_millis(sleep_duration));
+        }else {
+            draw_text("press SPACE to start/pause simulation", 0.0, size.1 - 30.0, 30.0, WHITE);
         }
         // debug/cheat keys 
         if is_key_down(KeyCode::Equal){
