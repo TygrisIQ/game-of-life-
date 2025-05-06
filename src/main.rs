@@ -181,7 +181,6 @@ async fn main() {
     let mut sleep_duration = 100; 
     let mut size = screen_size();
     let mut grid : Grid =  Grid::new();
-    
     loop{ 
         if screen_width() != size.0 && screen_height() != size.1{
              dbg!("window size changed.....redrawing!");
