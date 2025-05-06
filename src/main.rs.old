@@ -1,0 +1,128 @@
+use std::{thread::sleep, time::Duration};
+
+use macroquad::{miniquad::window::screen_size, prelude::*, ui::widgets::Window, window};
+use rand::RandomRange;
+
+const RUNNING : bool = true;
+const WIDTH : i32 = 1640;
+const CELL_SIZE : f32 = 20.0;
+const HEIGHT : i32 = 640;
+const TITLE : &str = "game of life";
+struct Cell{
+    alive: bool,
+    x: f32,
+    y: f32,
+        
+}
+impl Cell{
+
+    fn new(x: f32, y:f32) -> Self{
+        Cell{
+           alive: false,
+           x: x,
+           y: y
+        }
+    }
+    fn is_alive(&self) -> bool{
+        self.alive
+    }
+    fn kill(&mut self){
+        self.alive = false;
+    } 
+    fn heal(&mut self){
+        self.alive = true;
+    }
+    fn coordinates(&self) -> (f32, f32){
+        (self.x, self.y)
+    }
+}
+
+struct Grid{
+    cells: Vec<Cell>
+    
+}
+impl Grid{
+    // fn new() -> Self{
+        //let mut grid : Vec<Cell> = vec![];    
+        
+    // }
+    fn draw() -> Self{
+        let mut wv = 0.0;
+        let mut grid : Vec<Cell> = vec![];
+        while wv < screen_width(){
+            let mut hv = 0.0;
+            let mut rec_count = 0;
+            let ww = (screen_width() / 20.0).floor();
+            let hh = (screen_height() / 20.0).floor();
+            let rec_est = 2;
+            while hv < screen_height(){
+                // we have a cell here, we have reached a cell 
+
+                draw_rectangle_lines(wv, hv, CELL_SIZE, CELL_SIZE, 1.0, GRAY);
+                draw_rectangle(wv, hv, (CELL_SIZE - 0.5), (CELL_SIZE - 0.5), WHITE); 
+                rec_count += 1;
+                let cell = Cell::new(wv, hv);
+                grid.push(cell);
+                hv += 20.0;
+
+            }
+            wv += 20.0;
+            dbg!("rectangle count : ", rec_count);
+            dbg!("rectanlge estimation : ", rec_est);
+        }
+        Grid{
+            cells: grid
+        }
+    }
+    fn get_size(&self) -> i32{
+        self.cells.len().try_into().unwrap()
+    }
+    fn get_cell(&self, index: usize) -> &Cell{
+        &self.cells[index]
+    }
+    fn random_live(&mut self){
+           let index = RandomRange::gen_range(0, self.get_size()); 
+           let alive : bool = index / 2 == 0;
+           let cell = self.get_cell(index.try_into().unwrap());
+           match alive{
+           true => {
+               draw_rectangle_lines(cell.x, cell.y, CELL_SIZE, CELL_SIZE, 1.0, GRAY);
+               draw_rectangle(cell.x, cell.y, (CELL_SIZE - 0.5), (CELL_SIZE - 0.5), WHITE);
+           },
+           false => { 
+               draw_rectangle(cell.x, cell.y, CELL_SIZE - 0.5, CELL_SIZE -0.5, BLACK);
+               draw_rectangle_lines(cell.x, cell.y, CELL_SIZE, CELL_SIZE, 1.0, WHITE);
+
+           }
+           }
+
+           
+    }
+}
+
+#[macroquad::main("gameoflife")]
+async fn main() {
+    while RUNNING == true{
+        gfx();
+        clear_background(DARKBROWN);
+        let mut g = Grid::draw(); 
+        if (is_key_pressed(KeyCode::Space)){
+            g.random_live();
+        }
+        next_frame().await;
+    }
+}
+
+
+
+ fn gfx(){
+    //say the width is 60 and height is 60
+    //for every 20 units we draw a rectanlge (square)
+    //go from x = 0 to 640, count 20,
+    //go from 640 to y = 0, count 20 
+    //draw 
+}
+
+fn determine_cell_size(){
+    //TODO:hdhsah
+}
